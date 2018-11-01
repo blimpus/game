@@ -2,17 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class simplePlatformController : MonoBehaviour {
+public class simplePlatformController : MonoBehaviour
+{
 
-    // Use this for initialization
     [HideInInspector] public bool facingRight = true;
-    [HideInInspector] public bool jump = true;
-
+    [HideInInspector] public bool jump = false;
     public float moveForce = 365f;
     public float maxSpeed = 5f;
-    public float jumpForce = 1000;
+    public float jumpForce = 1000f;
     public Transform groundCheck;
-
 
 
     private bool grounded = false;
@@ -20,32 +18,51 @@ public class simplePlatformController : MonoBehaviour {
     private Rigidbody2D rb2d;
 
 
-	void Start () {
+    // Use this for initialization
+    void Awake()
+    {
         anim = GetComponent<Animator>();
         rb2d = GetComponent<Rigidbody2D>();
+    }
 
-	}
-	
-	// Update is called once per frame
-	void Update () {
+    // Update is called once per frame
+    void Update()
+    {
         grounded = Physics2D.Linecast(transform.position, groundCheck.position, 1 << LayerMask.NameToLayer("Ground"));
-
-        //disables being able to double jump. change if we want to double jump
+        //enables double jumping
         if (Input.GetButtonDown("Jump") && grounded)
         {
             jump = true;
         }
-	}
+    }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
         float h = Input.GetAxis("Horizontal");
 
-        //stopped video at 13 minutes@$&$*(#@&$*(&#@(*$&(*$@
         anim.SetFloat("Speed", Mathf.Abs(h));
+
+        if (h * rb2d.velocity.x < maxSpeed)
+            rb2d.AddForce(Vector2.right * h * moveForce);
+
+        if (Mathf.Abs(rb2d.velocity.x) > maxSpeed)
+            rb2d.velocity = new Vector2(Mathf.Sign(rb2d.velocity.x) * maxSpeed, rb2d.velocity.y);
+
+        if (h > 0 && !facingRight)
+            Flip();
+        else if (h < 0 && facingRight)
+            Flip();
+
+        if (jump)
+        {
+            anim.SetTrigger("Jump");
+            rb2d.AddForce(new Vector2(0f, jumpForce));
+            jump = false;
+        }
     }
 
-    void flip()
+
+    void Flip()
     {
         facingRight = !facingRight;
         Vector3 theScale = transform.localScale;
